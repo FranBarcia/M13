@@ -1,15 +1,16 @@
 package com.gamificacioc.webservices;
 
 import java.sql.*;
-import java.util.Arrays;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.jws.WebResult;
 import javax.jws.WebService;
 import org.apache.commons.lang.RandomStringUtils;
+import com.gamificacioc.model.Usuari;
 
 @WebService(serviceName="webservices")
 public class WebServices {
+    private static Usuari user = new Usuari();
     private int idUsuari;
     private String usuari;
     private String contrasenya;
@@ -23,11 +24,11 @@ public class WebServices {
 
     @WebMethod(operationName="comprovarLogin")
     //@WebResult(name="authId")
-    @WebResult(name="arrayStrings")
-    public String[] comprovarLogin(@WebParam(name="usuari") String usuari, @WebParam(name="contrasenya") String contrasenya) {
+    //@WebResult(name="arrayStrings")
+    public Usuari comprovarLogin(@WebParam(name="usuari") String usuari, @WebParam(name="contrasenya") String contrasenya) {
         String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
         Connection conexio = null;
-        String[] arrayStrings = null;
+        String[] arrayStrings = new String[2];
         String authId = "";
         
         try {
@@ -37,20 +38,26 @@ public class WebServices {
             String con = (new StringBuilder()).append("Select idUsuari, usuari from usuaris where usuari like '").append(usuari).append("' and contrasenya like '").append(contrasenya).append("'").toString();
             
             for(ResultSet rs = sql.executeQuery(con); rs.next();) {
+                System.out.println("ResultSet: "+rs.getString("usuari"));
                 if (rs.getInt("idUsuari") != 0) {
                     authId = RandomStringUtils.randomAlphanumeric(10);
+                    user.setUsuari(rs.getString("usuari"));
+                    user.setIdUsuari(rs.getInt("idUsuari"));
                 } else {
                     authId = "NULL";
                 }
             }
-            arrayStrings[0] = "Hola";
-            arrayStrings[1] = " mundo!";
         }
         catch(Exception e) {
             System.out.println("No s'ha completat la operacio...");
         }
         //return authId;
-        return arrayStrings;
+        
+        //arrayStrings[0] = authId;
+        //arrayStrings[1] = usuari;
+        
+        //return arrayStrings;
+        return user;
     }
 
     @WebMethod(operationName="insertarAlumne")

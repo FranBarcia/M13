@@ -4,92 +4,59 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import javax.jws.WebParam;
+import org.apache.commons.lang.RandomStringUtils;
+import com.gamificacioc.model.Usuari;
 
 /**
  *
  * @author fbarcia
  */
 public class test {
+    private static Usuari user = new Usuari();
     private int id;
     private String nom;
     private String cognom;
     private String email;
     
-    public static boolean insertarAlumne(String nom, String cognom, String email) {
+    public static Usuari comprovarLogin(@WebParam(name="usuari") String usuari, @WebParam(name="contrasenya") String contrasenya) {
         String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
         Connection conexio = null;
-        boolean funciona = false;
-        String con;
-
+        //String[] arrayStrings = new String[2];
+        String authId = "";
+        
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
-            Statement s = conexio.createStatement();
-            con = "INSERT INTO alumnes (nom, cognom, email) VALUES ('"+nom+"','" + cognom +"','"+ email +"')";
-            s.executeUpdate(con);
-            funciona = true;
-        }
-        catch(Exception e) {
-            System.out.println("No s'ha completat la operacio...");
-            System.out.println("Excepcio: "+e.getMessage());
-        }
-        return funciona;
-    }
-
-    public boolean buscarAlumnePerNom(String nom) {
-        String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
-        Connection conexio = null;
-        boolean funciona = false;
-        String con;
-        ResultSet rs;
-
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
-            Statement s = conexio.createStatement();
-            con = "SELECT * FROM alumnes where nom = '" + nom + "'" ;
-            rs = s.executeQuery (con);
-
-            while (rs.next()) {
-                nom = rs.getString("nom");
-                cognom = rs.getString("cognom");
-                email = rs.getString("email");
-                funciona=true;
-                mostrarNom();
-                mostrarCognom();
-                mostrarEmail();
-                break;
+            Statement sql = conexio.createStatement();
+            String con = (new StringBuilder()).append("Select idUsuari, usuari from usuaris where usuari like '").append(usuari).append("' and contrasenya like '").append(contrasenya).append("'").toString();
+            
+            for(ResultSet rs = sql.executeQuery(con); rs.next();) {
+                System.out.println("ResultSet: "+rs.getString("usuari"));
+                if (rs.getInt("idUsuari") != 0) {
+                    authId = RandomStringUtils.randomAlphanumeric(10);
+                    user.setUsuari(rs.getString("usuari"));
+                    user.setIdUsuari(rs.getInt("idUsuari"));
+                } else {
+                    authId = "NULL";
+                }
             }
         }
         catch(Exception e) {
+            e.printStackTrace();
             System.out.println("No s'ha completat la operacio...");
         }
-        return funciona;
-    }
-
-    public String mostrarNom() {
-        String nom;
-        nom = "";
-        nom = this.nom;
-        return nom;
-    }
-
-    public String mostrarCognom() {
-        String cognom;
-        cognom = "";
-        cognom = this.cognom;
-        return cognom;
-    }
-
-    public String mostrarEmail() {
-        String email;
-        email = "";
-        email = this.email;
-        return email;
+        //return authId;
+        
+        //arrayStrings[0] = authId;
+        //arrayStrings[1] = usuari;
+        
+        //return arrayStrings;
+        return user;
     }
     
     public static void main(String[] args) {
-        System.out.println("Hello, World!");
-        insertarAlumne("Fran", "Barcia", "fbarcia@gmail.com");
+        Usuari resposta = comprovarLogin("fbarcia", "password");
+        System.out.println("Valor retornat de comprovarLogin(): "+resposta.getUsuari()+" - "+resposta.getIdUsuari());
     }
 }
