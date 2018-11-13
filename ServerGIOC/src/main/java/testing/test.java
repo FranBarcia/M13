@@ -34,7 +34,7 @@ public class test {
             for(ResultSet rs = sql.executeQuery(con); rs.next();) {
                 System.out.println("ResultSet: "+rs.getString("usuari"));
                 if (rs.getInt("idUsuari") != 0) {
-                    authId = RandomStringUtils.randomAlphanumeric(10);
+                    user.setAuthId(RandomStringUtils.randomAlphanumeric(10));
                     user.setUsuari(rs.getString("usuari"));
                     user.setIdUsuari(rs.getInt("idUsuari"));
                 } else {
@@ -57,6 +57,6 @@ public class test {
     
     public static void main(String[] args) {
         Usuari resposta = comprovarLogin("fbarcia", "password");
-        System.out.println("Valor retornat de comprovarLogin(): "+resposta.getUsuari()+" - "+resposta.getIdUsuari());
+        System.out.println("Valor retornat de comprovarLogin(): "+resposta.getAuthId()+" - "+resposta.getUsuari()+" - "+resposta.getIdUsuari());
     }
 }

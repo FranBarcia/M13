@@ -11,20 +11,15 @@ import com.gamificacioc.model.Usuari;
 @WebService(serviceName="webservices")
 public class WebServices {
     private static Usuari user = new Usuari();
-    private int idUsuari;
-    private String usuari;
-    private String contrasenya;
     private String nom;
     private String cognom;
     private String email;
-    private String adresa;
     
     public WebServices() {
     }
 
     @WebMethod(operationName="comprovarLogin")
-    //@WebResult(name="authId")
-    //@WebResult(name="arrayStrings")
+    @WebResult(name="userAuthentication")
     public Usuari comprovarLogin(@WebParam(name="usuari") String usuari, @WebParam(name="contrasenya") String contrasenya) {
         String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
         Connection conexio = null;
@@ -40,7 +35,7 @@ public class WebServices {
             for(ResultSet rs = sql.executeQuery(con); rs.next();) {
                 System.out.println("ResultSet: "+rs.getString("usuari"));
                 if (rs.getInt("idUsuari") != 0) {
-                    authId = RandomStringUtils.randomAlphanumeric(10);
+                    user.setAuthId(RandomStringUtils.randomAlphanumeric(10));
                     user.setUsuari(rs.getString("usuari"));
                     user.setIdUsuari(rs.getInt("idUsuari"));
                 } else {

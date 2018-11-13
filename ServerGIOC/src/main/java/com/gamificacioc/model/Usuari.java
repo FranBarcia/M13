@@ -14,6 +14,15 @@ public class Usuari {
     private String cognom;
     private String email;
     private String adresa;
+    private String authId;
+
+    public String getAuthId() {
+        return authId;
+    }
+
+    public void setAuthId(String authId) {
+        this.authId = authId;
+    }
     private List<Usuari> llistaUsuaris;
     
     public Usuari(){
