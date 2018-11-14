@@ -28,8 +28,10 @@ import org.w3c.dom.NodeList;
  */
 public class WebServiceCalls {
     
-    private final String SERVER_GIOC = "http://gamificacioc.com:80/ServerGIOC/";
-    private final String GIOC_WEB_SERVICES = "http://gamificacioc.com:80/ServerGIOC/webservices";
+    //private final String SERVER_GIOC = "http://gamificacioc.com:80/ServerGIOC/";
+    private final String SERVER_GIOC = "http://localhost:8080/ServerGIOC/";
+    //private final String GIOC_WEB_SERVICES = "http://gamificacioc.com:80/ServerGIOC/webservices";
+    private final String GIOC_WEB_SERVICES = "http://localhost:8080/ServerGIOC/webservices";
     private final String MY_NAMESPACE = "ws";
     private final String MY_NAMESPACE_URI = "http://webservices.gamificacioc.com/";
     
