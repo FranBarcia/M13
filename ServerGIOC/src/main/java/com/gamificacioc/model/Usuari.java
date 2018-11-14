@@ -7,7 +7,7 @@ import java.util.List;
  * @author fbarcia
  */
 public class Usuari {
-    private int idUsuari;
+    //private int idUsuari;
     private String usuari;
     private String contrasenya;
     private String nom;
@@ -30,7 +30,7 @@ public class Usuari {
     }
 
     public Usuari(int idUsuari, String usuari, String contrasenya, String nom, String cognom, String email, String adresa) {
-        this.idUsuari = idUsuari;
+        //this.idUsuari = idUsuari;
         this.usuari = usuari;
         this.contrasenya = contrasenya;
         this.nom = nom;
@@ -46,7 +46,7 @@ public class Usuari {
     public void setAdresa(String adresa) {
         this.adresa = adresa;
     }
-
+    /*
     public int getIdUsuari() {
         return idUsuari;
     }
@@ -54,7 +54,7 @@ public class Usuari {
     public void setIdUsuari(int idUsuari) {
         this.idUsuari = idUsuari;
     }
-
+    */
     public String getUsuari() {
         return usuari;
     }
