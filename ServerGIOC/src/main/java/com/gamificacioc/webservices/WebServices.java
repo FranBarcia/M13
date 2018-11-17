@@ -116,7 +116,7 @@ public class WebServices {
                 if (rs.getInt("idUsuari") != 0) {
                     result = "Existing user";
                 }
-            }
+            }            
             catch(ClassNotFoundException | SQLException e) {
                 try {
                     query = conexio.prepareStatement("Insert into usuaris (usuari, contrasenya, nom, cognom, email, tipus) VALUES (?, ?, ?, ?, ?, ?)");
