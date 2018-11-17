@@ -14,6 +14,7 @@ public class WebServices {
     private String nom;
     private String cognom;
     private String email;
+    private String authId;
     
     @WebMethod(operationName="comprovarLogin")
     @WebResult(name="userAuthentication")
@@ -30,21 +31,20 @@ public class WebServices {
             rs.next();
 
             if (rs.getInt("idUsuari") != 0) {
-                if (sessioJaIniciada(rs.getInt("idUsuari")) == false) {
-                    user.setAuthId(RandomStringUtils.randomAlphanumeric(10));
-                    user.setUsuari(usuari);
-                    query = conexio.prepareStatement("Insert into conexions (idUsuari, authId) VALUES (?, ?)");
-                    query.setInt(1, rs.getInt("idUsuari"));
-                    query.setString(2, user.getAuthId());
-                    query.executeUpdate();
-                } else {
-                    user.setAuthId("User already connected");
-                    user.setUsuari(usuari);
+                authId = sessioJaIniciada(rs.getInt("idUsuari"));
+                if (!authId.equals("Invalid")) {
+                    tancarSessio(authId);
                 }
+                user.setAuthId(RandomStringUtils.randomAlphanumeric(10));
+                user.setUsuari(usuari);
+                query = conexio.prepareStatement("Insert into connexions (idUsuari, authId) VALUES (?, ?)");
+                query.setInt(1, rs.getInt("idUsuari"));
+                query.setString(2, user.getAuthId());
+                query.executeUpdate();
             } 
         }
         catch (ClassNotFoundException | SQLException e) {
-            user.setAuthId("INVALID");
+            user.setAuthId("Invalid");
             user.setUsuari(usuari);
         }
         
@@ -61,12 +61,13 @@ public class WebServices {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
-            query = conexio.prepareStatement("Select u.idUsuari, tipus from usuaris u join conexions c on u.idUsuari = c.idUsuari where authId like '"+authId+"'");
+            query = conexio.prepareStatement("Select u.idUsuari, tipus from usuaris u join connexions c on u.idUsuari = c.idUsuari where authId like '"+authId+"'");
             ResultSet rs = query.executeQuery();
             rs.next();
 
             if (rs.getInt("idUsuari") != 0) {
-                if (sessioJaIniciada(rs.getInt("idUsuari")) == true) {
+                authId = sessioJaIniciada(rs.getInt("idUsuari"));
+                if (!authId.equals("Invalid")) {
                     response = rs.getString("tipus");
                 }
             } 
@@ -79,117 +80,128 @@ public class WebServices {
     }
 
     @WebMethod(operationName="tancarSessio")
-//    @WebResult(name="userLogout")
     public void tancarSessio(@WebParam(name="authId") String authId) {
         String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
         PreparedStatement query;
-        //String response = "";
-        //Usuari user = new Usuari();
 
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
-            query = conexio.prepareStatement("Delete from conexions where authId like '"+authId+"'");
+            query = conexio.prepareStatement("Delete from connexions where authId like '"+authId+"'");
             query.executeUpdate(); 
         }
-        catch (ClassNotFoundException | SQLException e) {
-            //response = "INVALID";
-        }
-        
-        //return response;
+        catch (ClassNotFoundException | SQLException e) {}
     }
 
-    @WebMethod(operationName="insertarAlumne")
-    public boolean insertarAlumne(@WebParam(name="nom") String nom, @WebParam(name="cognom") String cognom, @WebParam(name="email") String email) {
-        String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
-        Connection conexio = null;
-        boolean funciona = false;
-        
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
-            Statement sql = conexio.createStatement();
-            String con = (new StringBuilder()).append("INSERT INTO alumnes (nom, cognom, email) VALUES ('").append(nom).append("', '").append(cognom).append("', '").append(email).append("')").toString();
-            sql.executeUpdate(con);
-            funciona = true;
-        }
-        catch(Exception e) {
-            System.out.println("No s'ha completat la operacio...");
-        }
-        
-        return funciona;
-    }
-
-    @WebMethod(operationName="buscarAlumnePerNom")
-    public boolean buscarAlumnePerNom(@WebParam(name="nom") String nom) {
-        String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
-        Connection conexio = null;
-        boolean funciona = false;
-        
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
-            Statement sql = conexio.createStatement();
-            String con = (new StringBuilder()).append("SELECT * FROM alumnes where nom = '").append(nom).append("'").toString();
-            ResultSet rs = sql.executeQuery(con);
-            
-            if(rs.next()) {
-                nom = rs.getString("nom");
-                cognom = rs.getString("cognom");
-                email = rs.getString("email");
-                funciona = true;
-                mostrarNom();
-                mostrarCognom();
-                mostrarEmail();
-            }
-        }
-        catch(Exception e) {
-            System.out.println("No s'ha completat la operacio...");
-        }
-        
-        return funciona;
-    }
-
-    @WebMethod(operationName="mostrarNom")
-    public String mostrarNom() {
-        String localNom = "";
-        localNom = nom;
-        return localNom;
-    }
-
-    @WebMethod(operationName="mostrarCognom")
-    public String mostrarCognom() {
-        String localCognom = "";
-        localCognom = cognom;
-        return localCognom;
-    }
-
-    @WebMethod(operationName="mostrarEmail")
-    public String mostrarEmail() {
-        String localEmail = "";
-        localEmail = email;
-        return localEmail;
-    }
-
-    private Boolean sessioJaIniciada(Integer idUsuari) {
+    @WebMethod(operationName="altaUsuari")
+    @WebResult(name="result")
+    public String altaUsuari(@WebParam(name="nom") String nom, @WebParam(name="cognom") String cognom, 
+                              @WebParam(name="email") String email, @WebParam(name="tipus") String tipus, 
+                              @WebParam(name="contrasenya") String contrasenya, @WebParam(name="authId") String authId) {
         String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
         PreparedStatement query;
-        Boolean connectat;
+        String result = "";
+        String usuari = nom.substring(0, 1).concat(cognom).toLowerCase();
+        Integer idUsuari;
+        
+        if (comprovarAuthId(authId) == true) {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
+                query = conexio.prepareStatement("Select idUsuari, usuari, email from usuaris where usuari = '"+usuari+"' or email = '"+email+"'");
+
+                ResultSet rs = query.executeQuery();
+                rs.next();
+
+                if (rs.getInt("idUsuari") != 0) {
+                    result = "Existing user";
+                }
+            }
+            catch(ClassNotFoundException | SQLException e) {
+                try {
+                    query = conexio.prepareStatement("Insert into usuaris (usuari, contrasenya, nom, cognom, email, tipus) VALUES (?, ?, ?, ?, ?, ?)");
+                    query.setString(1, usuari);
+                    query.setString(2, contrasenya);
+                    query.setString(3, nom);
+                    query.setString(4, cognom);
+                    query.setString(5, email);
+                    query.setString(6, tipus);
+                    query.executeUpdate();
+                    result = "User created";
+                    
+                    query = conexio.prepareStatement("Select idUsuari, usuari from usuaris where usuari = '"+usuari+"'");
+                    ResultSet rs = query.executeQuery();
+                    rs.next();
+                    idUsuari = rs.getInt("idUsuari");
+                    
+                    switch (tipus) {
+                        case "Alumne":
+                            query = conexio.prepareStatement("Insert into alumnes (idAlumne) VALUES (?)");
+                            break;
+                        case "Pare":
+                            query = conexio.prepareStatement("Insert into pares (idPare) VALUES (?)");
+                            break;
+                        case "Profe":
+                            query = conexio.prepareStatement("Insert into profes(idProfe) VALUES (?)");
+                            break;
+                    }
+                    query.setInt(1, idUsuari);
+                    query.executeUpdate();
+                } catch (SQLException ex) {
+                    result = "Error in creation";
+                }
+            }
+        } else {
+            result = "AuthId not valid";
+        }
+        
+        return result;
+    }
+
+    private String sessioJaIniciada(Integer idUsuari) {
+        String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
+        PreparedStatement query;
         
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
-            query = conexio.prepareStatement("Select idUsuari from conexions where idUsuari = '"+idUsuari+"'");
+            query = conexio.prepareStatement("Select idUsuari, authId from connexions where idUsuari = '"+idUsuari+"'");
             
             ResultSet rs = query.executeQuery();
             rs.next();
             
-            connectat = rs.getInt("idUsuari") == idUsuari;
+            if (rs.getInt("idUsuari") == idUsuari) {
+                authId = rs.getString("authId");
+            }
         }
         catch (ClassNotFoundException | SQLException e) {
-            connectat = false;
+            authId = "Invalid";
         }
         
-        return connectat;
+        return authId;
+    }
+
+    private Boolean comprovarAuthId(String authId) {
+        String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
+        PreparedStatement query;
+        Boolean result = null;
+        
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
+            query = conexio.prepareStatement("Select idUsuari, authId from connexions where authId = '"+authId+"'");
+            
+            ResultSet rs = query.executeQuery();
+            rs.next();
+            
+            if (rs.getString("authId").equals(authId)) {
+                result = true;
+            }
+        }
+        catch (ClassNotFoundException | SQLException e) {
+            result = false;
+        }
+        
+        return result;
     }
 }
