@@ -8,6 +8,10 @@ import javax.jws.WebService;
 import org.apache.commons.lang.RandomStringUtils;
 import com.gamificacioc.model.Usuari;
 
+/**
+ *
+ * @author Fran Barcia
+ */
 @WebService(serviceName="webservices")
 public class WebServices {
     private Connection conexio = null;
@@ -16,6 +20,14 @@ public class WebServices {
     private String email;
     private String authId;
     
+    /**
+     * Métode que donats dos paràmetres, usuari i contrasenya, comprova si existeixen a la BD
+     * i, en cas de que la combinació sigui correcta, inicia la sessió.
+     * Retorna un codi de sessió únic.
+     * @param usuari
+     * @param contrasenya
+     * @return authId
+     */
     @WebMethod(operationName="comprovarLogin")
     @WebResult(name="userAuthentication")
     public Usuari comprovarLogin(@WebParam(name="usuari") String usuari, @WebParam(name="contrasenya") String contrasenya) {
@@ -51,6 +63,13 @@ public class WebServices {
         return user;
     }
 
+    /**
+     * Métode que donat un authId retorna el tipus d'usuari al qual pertany aquesta sessió
+     * "Alumne, Profe, Pare o Admin"
+     * Retorna el tipus d'usuari.
+     * @param authId
+     * @return response
+     */
     @WebMethod(operationName="tipusUsuari")
     @WebResult(name="tipusUsuari")
     public String tipusUsuari(@WebParam(name="authId") String authId) {
@@ -79,6 +98,10 @@ public class WebServices {
         return response;
     }
 
+    /**
+     * Métode que donat un authId l'elimina de la BD per tal de tancar la sessió
+     * @param authId
+     */
     @WebMethod(operationName="tancarSessio")
     public void tancarSessio(@WebParam(name="authId") String authId) {
         String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
@@ -93,6 +116,18 @@ public class WebServices {
         catch (ClassNotFoundException | SQLException e) {}
     }
 
+    /**
+     * Métode que donats diversos paràmetres crea un usuari nou, amb el paràmetre 
+     * authId es comprova que l'usuari que executa l'alta d'un nou usuari és valid.
+     * Retorna un missatge amb el resultat de la creació del usuari.
+     * @param nom
+     * @param cognom
+     * @param email
+     * @param tipus
+     * @param contrasenya
+     * @param authId
+     * @return result
+     */
     @WebMethod(operationName="altaUsuari")
     @WebResult(name="result")
     public String altaUsuari(@WebParam(name="nom") String nom, @WebParam(name="cognom") String cognom, 
@@ -101,7 +136,7 @@ public class WebServices {
         String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
         PreparedStatement query;
         String result = "";
-        String usuari = nom.substring(0, 1).concat(cognom).toLowerCase();
+        String usuari = nom.substring(0, 1).concat(cognom).toLowerCase().trim();
         Integer idUsuari;
         
         if (comprovarAuthId(authId) == true) {
@@ -158,6 +193,11 @@ public class WebServices {
         return result;
     }
 
+    /**
+     * Métode que donat un idUsuari comprova si ja te una sessió iniciada i retorna l'authId
+     * @param idUsuari
+     * @return authId
+     */
     private String sessioJaIniciada(Integer idUsuari) {
         String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
         PreparedStatement query;
@@ -181,6 +221,12 @@ public class WebServices {
         return authId;
     }
 
+    /**
+     * Métode que donat un authId comprova si existeix a la BD, retorna un boleà 
+     * en cas que existeixi o no l'authId a la BD
+     * @param authId
+     * @return result
+     */
     private Boolean comprovarAuthId(String authId) {
         String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
         PreparedStatement query;
