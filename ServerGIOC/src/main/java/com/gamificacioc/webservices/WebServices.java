@@ -24,8 +24,8 @@ public class WebServices {
      * Métode que donats dos paràmetres, usuari i contrasenya, comprova si existeixen a la BD
      * i, en cas de que la combinació sigui correcta, inicia la sessió.
      * Retorna un codi de sessió únic.
-     * @param usuari
-     * @param contrasenya
+     * @param usuari Usuari utilitzat per iniciar sessió
+     * @param contrasenya Contrasenya del usuari
      * @return authId
      */
     @WebMethod(operationName="comprovarLogin")
@@ -67,7 +67,7 @@ public class WebServices {
      * Métode que donat un authId retorna el tipus d'usuari al qual pertany aquesta sessió
      * "Alumne, Profe, Pare o Admin"
      * Retorna el tipus d'usuari.
-     * @param authId
+     * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
      * @return response
      */
     @WebMethod(operationName="tipusUsuari")
@@ -100,7 +100,7 @@ public class WebServices {
 
     /**
      * Métode que donat un authId l'elimina de la BD per tal de tancar la sessió
-     * @param authId
+     * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
      */
     @WebMethod(operationName="tancarSessio")
     public void tancarSessio(@WebParam(name="authId") String authId) {
@@ -120,12 +120,12 @@ public class WebServices {
      * Métode que donats diversos paràmetres crea un usuari nou, amb el paràmetre 
      * authId es comprova que l'usuari que executa l'alta d'un nou usuari és valid.
      * Retorna un missatge amb el resultat de la creació del usuari.
-     * @param nom
-     * @param cognom
-     * @param email
-     * @param tipus
-     * @param contrasenya
-     * @param authId
+     * @param nom Nom el usuari que volem crear
+     * @param cognom Cognom del usuari que volem crear
+     * @param email Email del usuari, no es pot repetir
+     * @param tipus Tipus d'usuari que volem crear
+     * @param contrasenya Contrasenya que desitja el usuari
+     * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
      * @return result
      */
     @WebMethod(operationName="altaUsuari")
@@ -136,7 +136,7 @@ public class WebServices {
         String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
         PreparedStatement query;
         String result = "";
-        String usuari = nom.substring(0, 1).concat(cognom).toLowerCase().trim();
+        String usuari = nom.substring(0, 1).concat(String.join("", cognom.split(" "))).toLowerCase();
         Integer idUsuari;
         
         if (comprovarAuthId(authId) == true) {
@@ -195,7 +195,7 @@ public class WebServices {
 
     /**
      * Métode que donat un idUsuari comprova si ja te una sessió iniciada i retorna l'authId
-     * @param idUsuari
+     * @param idUsuari ID del usuari del qual volem comprovar si la sessió existeix o no
      * @return authId
      */
     private String sessioJaIniciada(Integer idUsuari) {
@@ -224,7 +224,7 @@ public class WebServices {
     /**
      * Métode que donat un authId comprova si existeix a la BD, retorna un boleà 
      * en cas que existeixi o no l'authId a la BD
-     * @param authId
+     * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
      * @return result
      */
     private Boolean comprovarAuthId(String authId) {
