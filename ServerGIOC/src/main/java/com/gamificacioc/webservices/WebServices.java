@@ -1,5 +1,6 @@
 package com.gamificacioc.webservices;
 
+import com.gamificacioc.model.Curs;
 import java.sql.*;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
@@ -7,6 +8,8 @@ import javax.jws.WebResult;
 import javax.jws.WebService;
 import org.apache.commons.lang.RandomStringUtils;
 import com.gamificacioc.model.Usuari;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -19,6 +22,7 @@ public class WebServices {
     private String cognom;
     private String email;
     private String authId;
+    private Integer idUsuari;
     
     /**
      * Métode que donats dos paràmetres, usuari i contrasenya, comprova si existeixen a la BD
@@ -137,7 +141,6 @@ public class WebServices {
         PreparedStatement query;
         String result = "";
         String usuari = nom.substring(0, 1).concat(String.join("", cognom.split(" "))).toLowerCase();
-        Integer idUsuari;
         
         if (comprovarAuthId(authId) == true) {
             try {
@@ -250,4 +253,193 @@ public class WebServices {
         
         return result;
     }
+    
+    /**
+     * Métode que donat un tipus d'usuari, retorna la llista de tots els usuaris que comparteixen tipus
+     * Retorna una llista amb tots els usuaris trobats.
+     * @param tipusUsuari Tipus d'usuari a consultar
+     * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
+     * @return listUsers
+     */
+    @WebMethod(operationName="consultarUsuaris")
+    @WebResult(name="llistarUsuaris")
+    public List<Usuari> consultarUsuaris(@WebParam(name="tipusUsuari") String tipusUsuari, @WebParam(name="authId") String authId) {
+        String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
+        PreparedStatement query;
+        List<Usuari> usuaris = new ArrayList<>(); 
+        
+        if (comprovarAuthId(authId) == true) {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
+                query = conexio.prepareStatement("Select * from usuaris where tipus  = '"+tipusUsuari+"'");
+                
+                ResultSet rs = query.executeQuery();
+                
+                while (rs.next()) {
+                    Usuari userTmp = new Usuari();
+                    userTmp.setUsuari(rs.getString("usuari"));
+                    userTmp.setNom(rs.getString("nom"));
+                    userTmp.setCognom(rs.getString("cognom"));
+                    userTmp.setEmail(rs.getString("email"));
+                    usuaris.add(userTmp);
+                }
+            } catch (SQLException | ClassNotFoundException ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            usuaris = null;
+        }
+        
+        return usuaris;
+    }
+    
+    /**
+     * Métode que donat un authId i un nom d'usuari, l'elimina de la base de dades.
+     * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
+     * @param usuari Usuari el qual es vol eliminar de la base de dades
+     * @return response
+     */
+    @WebMethod(operationName="eliminarUsuari")
+    @WebResult(name="result")
+    public String eliminarUsuari(@WebParam(name="authId") String authId, @WebParam(name="usuari") String usuari) {
+        String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
+        PreparedStatement query;
+        String response = "";
+        
+        if (comprovarAuthId(authId) == true) {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
+                query = conexio.prepareStatement("Delete from usuaris where usuari = '"+usuari+"'");
+                query.executeUpdate();
+                
+                response = "User "+usuari+" deleted";
+            }
+            catch (ClassNotFoundException | SQLException ex) {
+                response = "Not existing user";
+            }
+        }
+        return response;
+    }
+
+    /**
+     * Métode que donat un authId i una contrasenya nova, modifica la contrasenya del usuari autentificat i la canvia per la nova.
+     * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
+     * @param password Nova contrasenya que l'usuari vol canviar
+     * @return response
+     */
+    @WebMethod(operationName="canviarContrasenya")
+    @WebResult(name="result")
+    public String canviarContrasenya(@WebParam(name="authId") String authId, @WebParam(name="password") String password) {
+        String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
+        PreparedStatement query;
+        String response = "";
+        
+        if (comprovarAuthId(authId) == true) {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
+                query = conexio.prepareStatement("Select u.idUsuari from usuaris u join connexions c on u.idUsuari = c.idUsuari where authId like '"+authId+"'");
+                ResultSet rs = query.executeQuery();
+                rs.next();
+
+                if (rs.getInt("idUsuari") != 0) {
+                    idUsuari = rs.getInt("idUsuari");
+                    query = conexio.prepareStatement("update usuaris set contrasenya = '"+password+"' where idUsuari = '"+idUsuari+"'");
+                    query.executeUpdate();
+                    response = "Password changed OK";
+                } 
+            }
+            catch (ClassNotFoundException | SQLException e) {
+                response = "Password not changed";
+            }
+        }
+        return response;
+    }
+
+    /**
+     * Métode que donats diversos paràmetres crea un curs nou, amb el paràmetre 
+     * authId es comprova que l'usuari que executa l'alta d'un nou usuari és valid.
+     * Retorna un missatge amb el resultat de la creació del usuari.
+     * @param nom Nom del curs que volem crear
+     * @param descripcio Descripció del curs que volem crear
+     * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
+     * @return result
+     */
+    @WebMethod(operationName="altaCurs")
+    @WebResult(name="result")
+    public String altaCurs(@WebParam(name="nom") String nom, @WebParam(name="descripcio") String descripcio, 
+                           @WebParam(name="authId") String authId) {
+        String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
+        PreparedStatement query;
+        String result = "";
+        
+        if (comprovarAuthId(authId) == true) {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
+                query = conexio.prepareStatement("Select idCurs, nomCurs from cursos where nomCurs = '"+nom+"'");
+
+                ResultSet rs = query.executeQuery();
+                rs.next();
+
+                if (rs.getInt("idCurs") != 0) {
+                    result = "Existing course";
+                }
+            }            
+            catch(ClassNotFoundException | SQLException e) {
+                try {
+                    query = conexio.prepareStatement("Insert into cursos (nomCurs, descripcio) VALUES (?, ?)");
+                    query.setString(1, nom);
+                    query.setString(2, descripcio);
+                    query.executeUpdate();
+                    result = "Course created";
+                } catch (SQLException ex) {
+                    result = "Error in creation";
+                }
+            }
+        } else {
+            result = "AuthId not valid";
+        }
+        
+        return result;
+    }
+
+    /**
+     * Métode que retorna la llista de tots els cursos.
+     * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
+     * @return listCourses
+     */
+    @WebMethod(operationName="consultarCursos")
+    @WebResult(name="llistarCursos")
+    public List<Curs> consultarCursos(@WebParam(name="authId") String authId) {
+        String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
+        PreparedStatement query;
+        List<Curs> cursos = new ArrayList<>(); 
+        
+        if (comprovarAuthId(authId) == true) {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
+                query = conexio.prepareStatement("Select * from cursos");
+                
+                ResultSet rs = query.executeQuery();
+                
+                while (rs.next()) {
+                    Curs cursTmp = new Curs();
+                    cursTmp.setNomCurs(rs.getString("nomCurs"));
+                    cursTmp.setDescripcio(rs.getString("descripcio"));
+                    cursos.add(cursTmp);
+                }
+            } catch (SQLException | ClassNotFoundException ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            cursos = null;
+        }
+        
+        return cursos;
+    }
+    
 }

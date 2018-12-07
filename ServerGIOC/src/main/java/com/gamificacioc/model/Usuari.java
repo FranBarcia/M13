@@ -7,15 +7,15 @@ import java.util.List;
  * @author fbarcia
  */
 public class Usuari {
-    //private int idUsuari;
+    private int idUsuari;
     private String usuari;
     private String contrasenya;
     private String nom;
     private String cognom;
     private String email;
-    private String adresa;
     private String authId;
-
+    private List<Usuari> llistaUsuaris;
+    
     public String getAuthId() {
         return authId;
     }
@@ -23,38 +23,24 @@ public class Usuari {
     public void setAuthId(String authId) {
         this.authId = authId;
     }
-    private List<Usuari> llistaUsuaris;
     
     public Usuari(){
        super();
     }
 
-    public Usuari(int idUsuari, String usuari, String contrasenya, String nom, String cognom, String email, String adresa) {
+    public Usuari(int idUsuari, String usuari, String contrasenya, String nom, String cognom, String email) {
         //this.idUsuari = idUsuari;
         this.usuari = usuari;
         this.contrasenya = contrasenya;
         this.nom = nom;
         this.cognom = cognom;
         this.email = email;
-        this.adresa = adresa;
     }
 
-    public String getAdresa() {
-        return adresa;
-    }
-
-    public void setAdresa(String adresa) {
-        this.adresa = adresa;
-    }
-    /*
     public int getIdUsuari() {
         return idUsuari;
     }
 
-    public void setIdUsuari(int idUsuari) {
-        this.idUsuari = idUsuari;
-    }
-    */
     public String getUsuari() {
         return usuari;
     }
