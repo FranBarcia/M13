@@ -7,7 +7,7 @@ import javax.jws.WebParam;
 import javax.jws.WebResult;
 import javax.jws.WebService;
 import org.apache.commons.lang.RandomStringUtils;
-import com.gamificacioc.model.Usuari;
+import com.gamificacioc.model.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -295,6 +295,51 @@ public class WebServices {
     }
     
     /**
+     * Métode que donat un authId d'un alumne concret
+     * Retorna tota la informació d'aquest alumne
+     * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
+     * @return listUsers
+     */
+    @WebMethod(operationName="consultarAlumne")
+    @WebResult(name="alumne")
+    public Alumne consultarAlumne(@WebParam(name="authId") String authId) {
+        String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
+        PreparedStatement query;
+        Alumne alumne = new Alumne();
+        List<Curs> cursos = new ArrayList<>(); 
+        
+        if (comprovarAuthId(authId) == true) {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
+                query = conexio.prepareStatement("Select "
+                        + "usuari, nomCurs, descripcio, puntuacio, coneixement, actitud, magia, magiaMaxima "
+                        + "from ((usuaris u join connexions con on u.idUsuari = con.idUsuari) "
+                        + "join alumnes a on u.idUsuari = a.idAlumne) "
+                        + "join cursos c on c.idCurs = a.idCurs "
+                        + "where con.authId = '"+authId+"'");
+                
+                ResultSet rs = query.executeQuery();
+                
+                while (rs.next()) {
+                    Curs cursTmp = new Curs();
+                    cursTmp.setNomCurs(rs.getString("nomCurs"));
+                    cursTmp.setDescripcio(rs.getString("descripcio"));
+                    cursos.add(cursTmp);
+                }
+                alumne.setLlistaCursos(cursos);
+                
+            } catch (SQLException | ClassNotFoundException ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            alumne = null;
+        }
+        
+        return alumne;
+    }
+    
+    /**
      * Métode que donat un authId i un nom d'usuari, l'elimina de la base de dades.
      * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
      * @param usuari Usuari el qual es vol eliminar de la base de dades
@@ -312,9 +357,12 @@ public class WebServices {
                 Class.forName("com.mysql.cj.jdbc.Driver");
                 conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
                 query = conexio.prepareStatement("Delete from usuaris where usuari = '"+usuari+"'");
-                query.executeUpdate();
                 
-                response = "User "+usuari+" deleted";
+                if (query.executeUpdate() == 0) {
+                    response = "User "+usuari+" not exists";
+                } else {
+                    response = "User "+usuari+" deleted";
+                }
             }
             catch (ClassNotFoundException | SQLException ex) {
                 response = "Not existing user";
@@ -409,28 +457,76 @@ public class WebServices {
     /**
      * Métode que retorna la llista de tots els cursos.
      * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
+     * @param tipusUsuari tipus del usuari del qual volem consultar els cursos, "Alumne" o "Profe" o buit per tots els cursos.
      * @return listCourses
      */
     @WebMethod(operationName="consultarCursos")
     @WebResult(name="llistarCursos")
-    public List<Curs> consultarCursos(@WebParam(name="authId") String authId) {
+    public List<Curs> consultarCursos(@WebParam(name="authId") String authId, @WebParam(name="tipusUsuari") String tipusUsuari) {
         String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
         PreparedStatement query;
-        List<Curs> cursos = new ArrayList<>(); 
+        List<Curs> cursos = new ArrayList<>();
+        ResultSet rs;
         
         if (comprovarAuthId(authId) == true) {
             try {
                 Class.forName("com.mysql.cj.jdbc.Driver");
                 conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
-                query = conexio.prepareStatement("Select * from cursos");
                 
-                ResultSet rs = query.executeQuery();
+                switch (tipusUsuari) {
+                    case "Profe":
+                        query = conexio.prepareStatement("Select "
+                        + "usuari, nomCurs, descripcio "
+                        + "from ((usuaris u join connexions con on u.idUsuari = con.idUsuari) "
+                        + "join profes p on u.idUsuari = p.idProfe) "
+                        + "join cursos c on c.idCurs = p.idCurs "
+                        + "where con.authId = '"+authId+"'");
+                        
+                        rs = query.executeQuery();
                 
-                while (rs.next()) {
-                    Curs cursTmp = new Curs();
-                    cursTmp.setNomCurs(rs.getString("nomCurs"));
-                    cursTmp.setDescripcio(rs.getString("descripcio"));
-                    cursos.add(cursTmp);
+                        while (rs.next()) {
+                            Curs cursTmp = new Curs();
+                            cursTmp.setNomCurs(rs.getString("nomCurs"));
+                            cursTmp.setDescripcio(rs.getString("descripcio"));
+                            cursos.add(cursTmp);
+                        }
+                        
+                        break;
+                    case "Alumne":
+                        query = conexio.prepareStatement("Select "
+                        + "usuari, nomCurs, descripcio, puntuacio, coneixement, actitud, magia, magiaMaxima "
+                        + "from ((usuaris u join connexions con on u.idUsuari = con.idUsuari) "
+                        + "join alumnes a on u.idUsuari = a.idAlumne) "
+                        + "join cursos c on c.idCurs = a.idCurs "
+                        + "where con.authId = '"+authId+"'");
+
+                        rs = query.executeQuery();
+                
+                        while (rs.next()) {
+                            Curs cursTmp = new Curs();
+                            cursTmp.setNomCurs(rs.getString("nomCurs"));
+                            cursTmp.setDescripcio(rs.getString("descripcio"));
+                            cursTmp.setConeixement(rs.getInt("coneixement"));
+                            cursTmp.setPuntuacio(rs.getInt("puntuacio"));
+                            cursTmp.setMagia(rs.getInt("magia"));
+                            cursTmp.setMagiaMaxima(rs.getInt("magiaMaxima"));
+                            cursos.add(cursTmp);
+                        }
+
+                        break;
+                    default:
+                        query = conexio.prepareStatement("Select * from cursos");
+                        
+                        rs = query.executeQuery();
+                
+                        while (rs.next()) {
+                            Curs cursTmp = new Curs();
+                            cursTmp.setNomCurs(rs.getString("nomCurs"));
+                            cursTmp.setDescripcio(rs.getString("descripcio"));
+                            cursos.add(cursTmp);
+                        }
+                        
+                        break;
                 }
             } catch (SQLException | ClassNotFoundException ex) {
                 ex.printStackTrace();
@@ -441,5 +537,67 @@ public class WebServices {
         
         return cursos;
     }
-    
+
+    /**
+     * Métode que donats un usuari i un curs, assigna el curs al usuari, ja sigui 'Profe' o 'Alumne'
+     * Retorna un missatge amb el resultat de la creació del usuari.
+     * @param idUsuari Id numèric del usuari al que volem assignar un curs
+     * @param idCurs Id numèric del curs que volem assignar
+     * @param tipusUsuari 'Profe' o 'Alumne', és el tipus que s'ha de passar per tal de fer l'assignació
+     * @param authId Codi generat en un inici de sessió correcte que autoritza al client a fer operacions contra el WebService
+     * @return result
+     */
+    @WebMethod(operationName="assignarCurs")
+    @WebResult(name="result")
+    public String assignarCurs(@WebParam(name="idUsuari") Integer idUsuari, @WebParam(name="idCurs") Integer idCurs, 
+                           @WebParam(name="tipusUsuari") String tipusUsuari ,@WebParam(name="authId") String authId) {
+        String conexioBD = "jdbc:mysql://localhost:3306/gamific_db?serverTimezone=UTC";
+        PreparedStatement query;
+        String result = "";
+        
+        if (comprovarAuthId(authId) == true) {
+            try {
+                Class.forName("com.mysql.cj.jdbc.Driver");
+                conexio = DriverManager.getConnection(conexioBD, "user_db", "gamificacioc_dbP@ss");
+                
+                switch (tipusUsuari) {
+                    case "Profe":
+                        query = conexio.prepareStatement("Select c.idCurs, nomCurs from "
+                                + "cursos c join profes p on c.idCurs = p.idCurs"
+                                + "where c.idCurs = '"+idCurs+"'");
+                        break;
+                    case "Alumne":
+                        query = conexio.prepareStatement("Select c.idCurs, nomCurs from "
+                                + "cursos c join alumnes a on c.idCurs = a.idCurs"
+                                + "where c.idCurs = '"+idCurs+"'");
+                        break;
+                    default:
+                        query = conexio.prepareStatement("Select idCurs, nomCurs from cursos");
+                    }
+                
+                ResultSet rs = query.executeQuery();
+                rs.next();
+
+                if (rs.getInt("idCurs") != 0) {
+                    result = "Existing course";
+                }
+            }            
+            catch(ClassNotFoundException | SQLException e) {
+                try {
+                    query = conexio.prepareStatement("Insert into cursos (nomCurs, descripcio) VALUES (?, ?)");
+                    query.setInt(1, idUsuari);
+                    query.setInt(2, idCurs);
+                    query.executeUpdate();
+                    result = "Course created";
+                } catch (SQLException ex) {
+                    result = "Error in creation";
+                }
+            }
+        } else {
+            result = "AuthId not valid";
+        }
+        
+        return result;
+    }
+
 }
