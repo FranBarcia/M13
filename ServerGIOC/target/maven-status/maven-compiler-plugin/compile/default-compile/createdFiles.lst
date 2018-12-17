@@ -1,3 +1,4 @@
-com/gamificacioc/model/Usuari.class
-com/gamificacioc/webservices/WebServices.class
-com/gamificacioc/model/Curs.class
+com\gamificacioc\model\Usuari.class
+com\gamificacioc\model\Alumne.class
+com\gamificacioc\model\Curs.class
+com\gamificacioc\webservices\WebServices.class

@@ -1,7 +1,5 @@
 package com.gamificacioc.model;
 
-import java.util.List;
-
 /**
  *
  * @author fbarcia
@@ -14,8 +12,6 @@ public class Curs {
     private Integer coneixement;
     private Integer magia;
     private Integer magiaMaxima;
-    private List<Alumne> llistaAlumnes;
-    private List<Profe> llistaProfes;
 
     public Integer getPuntuacio() {
         return puntuacio;
@@ -47,22 +43,6 @@ public class Curs {
 
     public void setMagiaMaxima(Integer magiaMaxima) {
         this.magiaMaxima = magiaMaxima;
-    }
-
-    public List<Profe> getLlistaProfes() {
-        return llistaProfes;
-    }
-
-    public void setLlistaProfes(List<Profe> llistaProfes) {
-        this.llistaProfes = llistaProfes;
-    }
-    
-    public List<Alumne> getLlistaAlumnes() {
-        return llistaAlumnes;
-    }
-
-    public void setLlistaAlumnes(List<Alumne> llistaAlumnes) {
-        this.llistaAlumnes = llistaAlumnes;
     }
 
     public String getNomCurs() {

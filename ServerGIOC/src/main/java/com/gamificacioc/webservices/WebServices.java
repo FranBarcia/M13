@@ -579,7 +579,7 @@ public class WebServices {
                 rs.next();
 
                 if (rs.getInt("idCurs") != 0) {
-                    result = "Existing course";
+                    result = "Existing assignation";
                 }
             }            
             catch(ClassNotFoundException | SQLException e) {
@@ -588,9 +588,9 @@ public class WebServices {
                     query.setInt(1, idUsuari);
                     query.setInt(2, idCurs);
                     query.executeUpdate();
-                    result = "Course created";
+                    result = "Course assignated";
                 } catch (SQLException ex) {
-                    result = "Error in creation";
+                    result = "Error in assignation";
                 }
             }
         } else {
